@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>CT Escape – Segment Locator</title>
+  <style>
+    :root{
+      --bg:#06110b;
+      --panel:#071b10;
+      --text:#e7fff1;
+      --muted:#a7d9b6;
+      --accent:#28ff7a;
+      --danger:#ff3b6a;
+      --border: rgba(40,255,122,.22);
+      --shadow: rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background: radial-gradient(1200px 700px at 70% 15%, rgba(40,255,122,.10), transparent 60%),
+                  radial-gradient(900px 600px at 15% 70%, rgba(40,255,122,.08), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:16px;
+      display:grid;
+      grid-template-columns: 1.35fr .95fr;
+      gap:14px;
+    }
+    header{
+      grid-column:1 / -1;
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:14px 16px;
+      box-shadow: 0 16px 40px var(--shadow);
+      background: linear-gradient(180deg, rgba(40,255,122,.10), rgba(40,255,122,.03));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .title{display:flex;flex-direction:column;gap:2px;}
+    .title h1{margin:0;font-size:18px;letter-spacing:.6px;}
+    .title .sub{margin:0;font-size:12px;color:var(--muted);line-height:1.3;}
+    .badge{
+      border:1px solid var(--border);
+      background: rgba(40,255,122,.06);
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px rgba(40,255,122,.8)}
+    .panel{
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow: 0 16px 40px var(--shadow);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      overflow:hidden;
+    }
+    .viewer{padding:12px;display:flex;flex-direction:column;gap:10px;}
+    .caseRow{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+    select, button, input{font: inherit;}
+    select{
+      width:100%;
+      background: rgba(0,0,0,.25);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:12px 12px;
+      border-radius:12px;
+      outline:none;
+    }
+    button{
+      background: rgba(40,255,122,.10);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:12px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    button:hover{ background: rgba(40,255,122,.16); }
+    button:active{ transform: translateY(1px); }
+    .ctFrame{
+      position:relative;
+      width:100%;
+      aspect-ratio: 1 / 1;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background:#020805;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      touch-action: none; /* enables smooth swipe without page scroll */
+    }
+    .ctFrame img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      user-select:none;
+      -webkit-user-drag:none;
+      background:#020805;
+    }
+    .hud{
+      position:absolute;
+      inset:10px 10px auto 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      pointer-events:none;
+    }
+    .hud .pill{
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.35);
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      backdrop-filter: blur(6px);
+    }
+    .controls{display:grid;grid-template-columns: 1fr auto;gap:10px;align-items:center;}
+    input[type="range"]{width:100%;accent-color: var(--accent);}
+    .help{color:var(--muted);font-size:12px;line-height:1.35;padding:0 2px 2px 2px;}
+    .right{padding:12px;display:flex;flex-direction:column;gap:12px;}
+    .card{
+      background: linear-gradient(180deg, rgba(40,255,122,.06), rgba(40,255,122,.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+    }
+    .card h2{margin:0 0 8px 0;font-size:14px;letter-spacing:.5px;}
+    .segments{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    .segBox label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;}
+    .segBox input{
+      width:100%;
+      background: rgba(0,0,0,.25);
+      border:1px solid var(--border);
+      border-radius:12px;
+      color:var(--text);
+      padding:12px 10px;
+      outline:none;
+      text-align:center;
+      font-size:18px;
+      letter-spacing:1px;
+    }
+    .status{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted);}
+    .ok{color:var(--accent);}
+    .bad{color:var(--danger);}
+    .note{font-size:12px;color:var(--muted);line-height:1.35;}
+    .locked{
+      opacity:.35;
+      pointer-events:none;
+      filter: grayscale(.2);
+    }
+
+    /* iPad: stack columns in portrait */
+    @media (max-width: 900px){
+      .wrap{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="panel" style="padding:12px 14px;">
+      <div class="title">
+        <h1>Firewall: Pulmonary Lesions</h1>
+        <p class="sub">
+          Scroll through the CTs (swipe/drag/slider). Identify the bronchopulmonary segment of the largest tumor for each CT-scan.
+          Enter the 3 digits. If correct → you’ll get access.
+        </p>
+      </div>
+      <div class="badge"><span class="dot"></span><span id="progressText">0 / 3 correct</span></div>
+    </header>
+
+    <!-- LEFT: Viewer -->
+    <section class="panel viewer">
+      <div class="caseRow">
+        <div style="flex:1">
+          <select id="caseSelect"></select>
+        </div>
+        <button id="preloadBtn" title="Preload this stack (recommended on iPad)">Preload</button>
+      </div>
+
+      <div class="ctFrame" id="ctFrame">
+        <img id="ctImg" alt="CT slice" draggable="false" />
+        <div class="hud">
+          <div class="pill">Case: <b id="hudCase">1</b></div>
+          <div class="pill">Slice: <b id="hudSlice">1</b>/<span id="hudTotal">1</span></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input id="sliceRange" type="range" min="1" max="1" value="1" />
+        <button id="resetSliceBtn" title="First slice">↺</button>
+      </div>
+
+      <div class="help">
+        iPad controls: <b>swipe</b> on the image to scroll slices · use the <b>slider</b> for fast jumps.
+        <br/>
+        The time is ticking...
+      </div>
+    </section>
+
+    <!-- RIGHT: Inputs -->
+    <aside class="panel right">
+      <div class="card">
+        <h2>Enter the bronchopulmonary segments</h2>
+
+        <div class="segments">
+          <div class="segBox">
+            <label for="seg1">Case 1 – Segment</label>
+            <input id="seg1" type="number" inputmode="numeric" placeholder="e.g. 1" />
+          </div>
+          <div class="segBox">
+            <label for="seg2">Case 2 – Segment</label>
+            <input id="seg2" type="number" inputmode="numeric" placeholder="e.g. 2" />
+          </div>
+          <div class="segBox">
+            <label for="seg3">Case 3 – Segment</label>
+            <input id="seg3" type="number" inputmode="numeric" placeholder="e.g. 3" />
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+        <button id="checkBtn">Submit</button>
+        <div class="status" id="statusLine">Enter all three digits, then tap “Submit”.</div>
+        <div class="note" id="hintLine"></div>
+      </div>
+
+    </aside>
+  </div>
+
+<script>
+/**
+ * =========================
+ * CONFIG
+ * =========================
+ * Folder structure:
+ *   assets/cases/case1/001.jpg ...
+ *   assets/cases/case2/001.jpg ...
+ *   assets/cases/case3/001.jpg ...
+ */
+const CASES = [
+  { id: 1, name: "Case 1", folder: "assets/cases/case1", sliceCount: 34 },
+  { id: 2, name: "Case 2", folder: "assets/cases/case2", sliceCount: 76 },
+  { id: 3, name: "Case 3", folder: "assets/cases/case3", sliceCount: 60 }
+];
+
+// ✅ Correct digits (segments). Change these if needed:
+const CORRECT = { seg1: 10, seg2: 2, seg3: 3 };
+
+// ✅ Redirect target (page 2)
+const SUCCESS_PAGE = "success.html";
+
+// Images
+const PAD = 3;      // 001.jpg
+const EXT = "jpg";  // jpg or png
+
+// Optional hint
+const HINT = "Segments are numbered S1–S10 (bronchopulmonary segmentation).";
+
+/**
+ * =========================
+ * STATE + ELEMENTS
+ * =========================
+ */
+let currentCaseIndex = 0;
+let currentSlice = 1;
+
+const caseSelect = document.getElementById("caseSelect");
+const preloadBtn = document.getElementById("preloadBtn");
+const ctImg = document.getElementById("ctImg");
+const sliceRange = document.getElementById("sliceRange");
+const resetSliceBtn = document.getElementById("resetSliceBtn");
+const ctFrame = document.getElementById("ctFrame");
+
+const hudCase = document.getElementById("hudCase");
+const hudSlice = document.getElementById("hudSlice");
+const hudTotal = document.getElementById("hudTotal");
+
+const seg1 = document.getElementById("seg1");
+const seg2 = document.getElementById("seg2");
+const seg3 = document.getElementById("seg3");
+const checkBtn = document.getElementById("checkBtn");
+const statusLine = document.getElementById("statusLine");
+const hintLine = document.getElementById("hintLine");
+const progressText = document.getElementById("progressText");
+
+hintLine.textContent = HINT;
+
+function pad(n, width){
+  const s = String(n);
+  return s.length >= width ? s : "0".repeat(width - s.length) + s;
+}
+function imgPath(caseObj, slice){
+  return `${caseObj.folder}/${pad(slice, PAD)}.${EXT}`;
+}
+
+function setCase(index){
+  currentCaseIndex = index;
+  const c = CASES[currentCaseIndex];
+
+  hudCase.textContent = c.id;
+  hudTotal.textContent = c.sliceCount;
+
+  sliceRange.min = 1;
+  sliceRange.max = c.sliceCount;
+  setSlice(1);
+}
+
+function setSlice(n){
+  const c = CASES[currentCaseIndex];
+  currentSlice = Math.max(1, Math.min(c.sliceCount, n));
+  sliceRange.value = currentSlice;
+  hudSlice.textContent = currentSlice;
+
+  ctImg.src = imgPath(c, currentSlice);
+  ctImg.onerror = () => {
+    ctImg.onerror = null;
+    ctImg.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">
+        <rect width="100%" height="100%" fill="#020805"/>
+        <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle"
+              fill="#a7d9b6" font-size="24" font-family="monospace">
+          Missing image:
+        </text>
+        <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+              fill="#28ff7a" font-size="16" font-family="monospace">
+          ${imgPath(c, currentSlice)}
+        </text>
+        <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle"
+              fill="#a7d9b6" font-size="13" font-family="monospace">
+          Check your folder + numbering (001.jpg, 002.jpg, …).
+        </text>
+      </svg>
+    `);
+  };
+}
+
+function preloadCurrentCase(){
+  const c = CASES[currentCaseIndex];
+  let loaded = 0;
+
+  statusLine.className = "status";
+  statusLine.textContent = `Preloading ${c.sliceCount} images… (0/${c.sliceCount})`;
+
+  for(let i=1;i<=c.sliceCount;i++){
+    const im = new Image();
+    im.onload = () => {
+      loaded++;
+      if(loaded % 6 === 0 || loaded === c.sliceCount){
+        statusLine.textContent = `Preloading ${c.sliceCount} images… (${loaded}/${c.sliceCount})`;
+      }
+      if(loaded === c.sliceCount){
+        statusLine.className = "status ok";
+        statusLine.textContent = "Preload complete ✓";
+      }
+    };
+    im.src = imgPath(c, i);
+  }
+}
+
+function computeProgress(){
+  const a = Number(seg1.value);
+  const b = Number(seg2.value);
+  const c = Number(seg3.value);
+  let correct = 0;
+  if(!Number.isNaN(a) && a === CORRECT.seg1) correct++;
+  if(!Number.isNaN(b) && b === CORRECT.seg2) correct++;
+  if(!Number.isNaN(c) && c === CORRECT.seg3) correct++;
+  progressText.textContent = `${correct} / 3 correct`;
+  return correct;
+}
+
+function submit(){
+  const a = Number(seg1.value);
+  const b = Number(seg2.value);
+  const c = Number(seg3.value);
+
+  if([a,b,c].some(x => Number.isNaN(x))){
+    statusLine.className = "status bad";
+    statusLine.textContent = "Please enter all three digits.";
+    computeProgress();
+    return;
+  }
+
+  const ok = (a === CORRECT.seg1 && b === CORRECT.seg2 && c === CORRECT.seg3);
+  const correctCount = computeProgress();
+
+  if(ok){
+    statusLine.className = "status ok";
+    statusLine.textContent = "Correct ✓ Redirecting…";
+
+    // Store code/word for page 2 (works offline)
+    const lockCode = `${CORRECT.seg1}${CORRECT.seg2}${CORRECT.seg3}`;
+    sessionStorage.setItem("escape_lock_code", lockCode);
+    sessionStorage.setItem("escape_word", "SCREENING");
+
+    window.location.href = SUCCESS_PAGE;
+  } else {
+    statusLine.className = "status bad";
+    statusLine.textContent = `Not correct ✗ (${correctCount}/3 correct)`;
+  }
+}
+
+/**
+ * =========================
+ * iPad-friendly slice scrolling:
+ * - swipe/drag on image
+ * - slider
+ */
+let touchY = 0;
+let lastY = 0;
+let dragging = false;
+
+ctFrame.addEventListener("touchstart", (e) => {
+  if(!e.touches?.length) return;
+  touchY = e.touches[0].clientY;
+}, {passive:true});
+
+ctFrame.addEventListener("touchmove", (e) => {
+  if(!e.touches?.length) return;
+  const y = e.touches[0].clientY;
+  const dy = y - touchY;
+  if(Math.abs(dy) >= 10){
+    setSlice(currentSlice + (dy > 0 ? 1 : -1));
+    touchY = y;
+  }
+}, {passive:true});
+
+// Mouse drag (useful on desktop)
+ctFrame.addEventListener("mousedown", (e) => { dragging = true; lastY = e.clientY; });
+window.addEventListener("mouseup", ()=> dragging=false);
+window.addEventListener("mousemove", (e) => {
+  if(!dragging) return;
+  const dy = e.clientY - lastY;
+  if(Math.abs(dy) >= 6){
+    setSlice(currentSlice + (dy > 0 ? 1 : -1));
+    lastY = e.clientY;
+  }
+});
+
+// Slider + buttons
+sliceRange.addEventListener("input", () => setSlice(Number(sliceRange.value)));
+resetSliceBtn.addEventListener("click", () => setSlice(1));
+preloadBtn.addEventListener("click", preloadCurrentCase);
+
+// Form
+checkBtn.addEventListener("click", submit);
+[seg1, seg2, seg3].forEach(el => {
+  el.addEventListener("input", computeProgress);
+  el.addEventListener("keydown", (e)=>{ if(e.key==="Enter") submit(); });
+});
+
+// Init
+function init(){
+  CASES.forEach((c, i) => {
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = c.name;
+    caseSelect.appendChild(opt);
+  });
+  caseSelect.addEventListener("change", () => setCase(Number(caseSelect.value)));
+
+  setCase(0);
+  computeProgress();
+}
+init();
+</script>
+</body>
+</html>
